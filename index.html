@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon MusicGen AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #9b5cff;
+            --secondary-purple: #7a2aff;
+            --dark-bg-1: #0f0b14;
+            --dark-bg-2: #120919;
+            --text-light: #f0f0f0;
+            --text-medium: #c0c0c0;
+            --glow-color: rgba(155, 92, 255, 0.8);
+            --border-color: rgba(155, 92, 255, 0.3);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-light);
+            background: linear-gradient(135deg, var(--dark-bg-1), var(--dark-bg-2));
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Particle Background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(122, 42, 255, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(155, 92, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 90%, rgba(122, 42, 255, 0.05) 0%, transparent 20%);
+            animation: moveParticles 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes moveParticles {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(10px, 15px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            color: var(--primary-purple);
+            text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color);
+        }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-bottom: 2.5rem;
+            animation: fadeIn 1.2s ease-out;
+        }
+
+        .hero h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-medium);
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* Main Generator Card */
+        .generator-card {
+            background: rgba(20, 15, 30, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(122, 42, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: slideUpFadeIn 1s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        @keyframes slideUpFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-group {
+            text-align: left;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-medium);
+        }
+
+        textarea, select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--text-light);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: space-between;
+        }
+        
+        .settings-row .input-group {
+            flex: 1;
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            background: linear-gradient(90deg, var(--primary-purple), var(--secondary-purple));
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px var(--glow-color);
+            animation: pulseGlow 2.5s infinite ease-in-out;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px var(--glow-color); }
+            50% { box-shadow: 0 0 35px var(--glow-color); }
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 40px var(--glow-color);
+        }
+
+        /* Output Section */
+        .output-section {
+            margin-top: 2.5rem;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            min-height: 120px; /* Reserve space */
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .loading-animation {
+            display: flex;
+            gap: 6px;
+            height: 40px;
+            align-items: flex-end;
+        }
+
+        .loading-animation .bar {
+            width: 8px;
+            background-color: var(--primary-purple);
+            border-radius: 4px;
+            animation: equalizer 1.2s infinite ease-in-out;
+            box-shadow: 0 0 10px var(--glow-color);
+        }
+        
+        .loading-animation .bar:nth-child(2) { animation-delay: 0.2s; }
+        .loading-animation .bar:nth-child(3) { animation-delay: 0.4s; }
+        .loading-animation .bar:nth-child(4) { animation-delay: 0.6s; }
+        .loading-animation .bar:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes equalizer {
+            0%, 100% { height: 5px; }
+            50% { height: 40px; }
+        }
+
+        .audio-player {
+            display: none; /* Hidden by default */
+            width: 100%;
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 8px;
+        }
+        
+        /* Customizing audio player controls */
+        audio::-webkit-media-controls-panel {
+            background-color: rgba(20, 15, 30, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        audio::-webkit-media-controls-play-button,
+        audio::-webkit-media-controls-mute-button {
+            background-color: var(--primary-purple);
+            border-radius: 50%;
+        }
+        audio::-webkit-media-controls-current-time-display,
+        audio::-webkit-media-controls-time-remaining-display {
+            color: var(--text-light);
+        }
+        
+        /* Download Button */
+        .download-btn {
+            background: transparent;
+            color: var(--primary-purple);
+            border: 2px solid var(--primary-purple);
+            border-radius: 8px;
+            padding: 0.7rem 1.5rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            display: none; /* Hidden by default */
+        }
+        
+        .download-btn:hover {
+            color: white;
+            background-color: var(--primary-purple);
+            box-shadow: 0 0 20px var(--glow-color);
+        }
+
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .download-btn:hover::before {
+            left: 100%;
+        }
+        
+        /* Footer */
+        footer {
+            margin-top: 3rem;
+            color: var(--text-medium);
+            font-size: 0.9rem;
+            opacity: 0.7;
+            animation: fadeIn 1.8s ease-out;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            body { padding: 1rem; }
+            header h1 { font-size: 1.5rem; }
+            .logo { font-size: 2rem; }
+            .hero h2 { font-size: 1.2rem; }
+            .generator-card { padding: 1.5rem; }
+            .settings-row { flex-direction: column; gap: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="particles"></div>
+
+    <div class="container">
+        
+        <header>
+            <div class="logo">♪</div>
+            <h1>MusicGen AI</h1>
+        </header>
+
+        <section class="hero">
+            <h2>Transform Your Ideas into Music with AI</h2>
+        </section>
+        
+        <main>
+            <div class="generator-card">
+                
+                <div class="input-group">
+                    <label for="prompt">Describe your music idea...</label>
+                    <textarea id="prompt" name="prompt" rows="4" placeholder="e.g., A futuristic synthwave track with a driving beat, perfect for a midnight drive through a neon city."></textarea>
+                </div>
+
+                <div class="settings-row">
+                    <div class="input-group">
+                        <label for="model">Model Size</label>
+                        <select id="model" name="model">
+                            <option value="small">Small (Fastest)</option>
+                            <option value="medium" selected>Medium (Balanced)</option>
+                            <option value="large">Large (Highest Quality)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="duration">Duration (seconds)</label>
+                        <input type="number" id="duration" name="duration" min="2" max="60" value="15" style="width: 100%; padding: 0.75rem; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-light); font-size: 1rem;">
+                    </div>
+                </div>
+
+                <button class="generate-btn" id="generateBtn">Generate</button>
+
+            </div>
+
+            <section class="output-section" id="outputSection">
+                <div class="loading-animation" id="loading" style="display: none;">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+                
+                <div class="audio-player" id="audioPlayerWrapper">
+                     <audio controls id="audioPlayer" src=""></audio>
+                </div>
+                
+                <button class="download-btn" id="downloadBtn">Download Music</button>
+            </section>
+        </main>
+        
+        <footer>
+            <p>Powered by Hugging Face MusicGen & Cloud AI</p>
+        </footer>
+        
+    </div>
+
+<script>
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const audioPlayerWrapper = document.getElementById('audioPlayerWrapper');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const promptInput = document.getElementById('prompt');
+        const durationInput = document.getElementById('duration');
+
+        generateBtn.addEventListener('click', async () => {
+            const promptText = promptInput.value;
+            const duration = parseInt(durationInput.value, 10);
+
+            if (!promptText.trim()) {
+                alert('Please enter a music description!');
+                return;
+            }
+
+            // 1. Update UI to show loading state
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            audioPlayerWrapper.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            loading.style.display = 'flex';
+
+            try {
+                // 2. Send the request to the back-end
+                const response = await fetch('/generate-music', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: promptText,
+                        duration: duration
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate music. Server returned ' + response.status);
+                }
+
+                const data = await response.json();
+                
+                // 3. Update the audio player with the new file
+                audioPlayer.src = data.url;
+                downloadBtn.href = data.url; // Set download link
+                downloadBtn.setAttribute('download', 'neon-music-gen.wav'); // Set filename
+
+                // 4. Show the results
+                audioPlayerWrapper.style.display = 'block';
+                downloadBtn.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please check the console for details.');
+            } finally {
+                // 5. Reset the UI
+                loading.style.display = 'none';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate';
+            }
+        });
+    </script>
+
+</body>
+</html>
