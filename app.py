@@ -1,26 +1,28 @@
-from flask import Flask, request, jsonify, send_from_directory
-from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
-from datasets import load_dataset
-import torch
-import soundfile as sf
 import os
+os.environ["TRANSFORMERS_CACHE"] = "/opt/render/.cache/huggingface"
+
+from flask import Flask, request, jsonify, send_from_directory
+import numpy as np
+import scipy.io.wavfile as wavfile
+import time
 
 app = Flask(__name__)
 
-# --- AI Model Setup (Smaller Model) ---
-device = "cpu"
-processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
-model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts").to(device)
-vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan").to(device)
+# lazy-loaded pipeline
+pipe = None
 
-# Load speaker embeddings
-embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
-speaker_embeddings = torch.tensor(embeddings_dataset[7306]["xvector"]).unsqueeze(0)
-# --- End Model Setup ---
+def get_pipe():
+    global pipe
+    if pipe is None:
+        # import here to avoid heavy import at module load
+        from transformers import pipeline
+        print("Loading MusicGen pipeline (this may take a while)...", flush=True)
+        pipe = pipeline("text-to-audio", "facebook/musicgen-small", device=-1)  # -1 -> CPU
+        print("Pipeline loaded.", flush=True)
+    return pipe
 
-# --- Ensure static/music directory exists ---
-if not os.path.exists('static/music'):
-    os.makedirs('static/music')
+# Ensure output dir exists
+os.makedirs("static/music", exist_ok=True)
 
 @app.route('/')
 def index():
@@ -33,24 +35,31 @@ def serve_music(filename):
 @app.route('/generate-music', methods=['POST'])
 def generate_music():
     try:
-        data = request.json
-        prompt = data.get('prompt')
-        # Duration is not controllable with this model, it depends on the text length.
+        data = request.json or {}
+        prompt = data.get('prompt', '')
+        duration = int(min(int(data.get('duration', 15)), 45))  # cap duration to 45s
 
-        inputs = processor(text=prompt, return_tensors="pt").to(device)
-        
-        speech = model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=vocoder)
-        
-        output_filename = f"speech_{hash(prompt)}.wav"
-        output_path = os.path.join('static/music', output_filename)
-        
-        sf.write(output_path, speech.cpu().numpy(), samplerate=16000)
+        if not prompt.strip():
+            return jsonify({"error": "Empty prompt"}), 400
 
-        file_url = f"/static/music/{output_filename}"
-        return jsonify({'url': file_url})
+        p = get_pipe()
+        max_new_tokens = int(duration * 50)
+        music = p(prompt, forward_params={"max_new_tokens": max_new_tokens})
+
+        sampling_rate = music["sampling_rate"]
+        audio_numpy = music["audio"][0].T
+
+        output_filename = f"music_{abs(hash(prompt))}_{int(time.time())}.wav"
+        output_path = os.path.join("static/music", output_filename)
+
+        audio_int16 = np.int16(audio_numpy * 32767)
+        wavfile.write(output_path, rate=sampling_rate, data=audio_int16)
+
+        return jsonify({"url": f"/static/music/{output_filename}"})
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return jsonify({'error': 'Failed to generate speech'}), 500
+        print("Error in generate-music:", e, flush=True)
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
