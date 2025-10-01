@@ -5,19 +5,19 @@ import scipy.io.wavfile as wavfile
 import time
 
 # Set HuggingFace cache path
-os.environ["TRANSFORMERS_CACHE"] = "/opt/render/.cache/huggingface"
-os.makedirs(os.environ["TRANSFORMERS_CACHE"], exist_ok=True)
+os.environ["HF_HOME"] = "/opt/render/.cache/huggingface"
+os.makedirs(os.environ["HF_HOME"], exist_ok=True)
 os.makedirs("static/music", exist_ok=True)
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Load MusicGen pipeline at startup
-print("Loading MusicGen pipeline (this may take a while)...", flush=True)
+# Load lightweight MusicGen pipeline at startup
+print("Loading lightweight MusicGen pipeline (tiny, CPU-friendly)...", flush=True)
 from transformers import pipeline
 
 try:
-    pipe = pipeline("text-to-audio", "facebook/musicgen-small", device=-1)  # CPU
+    pipe = pipeline("text-to-audio", "facebook/musicgen-tiny", device=-1)  # CPU
     print("Pipeline loaded successfully.", flush=True)
 except Exception as e:
     print("Failed to load MusicGen pipeline:", e, flush=True)
@@ -40,7 +40,7 @@ def generate_music():
     try:
         data = request.json or {}
         prompt = data.get('prompt', '').strip()
-        duration = int(min(int(data.get('duration', 15)), 15))  # max 15s for CPU
+        duration = int(min(int(data.get('duration', 10)), 10))  # max 10s for CPU
 
         if not prompt:
             return jsonify({"error": "Empty prompt"}), 400
@@ -64,7 +64,7 @@ def generate_music():
         print("Error generating music:", e, flush=True)
         return jsonify({"error": str(e)}), 500
 
-# Run app (for local testing)
+# Local test server
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
