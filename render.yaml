@@ -1,9 +1,6 @@
 services:
   - type: web
-    name: aiml-service
+    name: musicgen-service
     env: python
-    buildCommand: |
-      mkdir -p /opt/render/.cache/huggingface
-      pip install -r requirements.txt
-      TRANSFORMERS_CACHE=/opt/render/.cache/huggingface python -c "from transformers import pipeline; pipeline('text-to-audio','facebook/musicgen-small')"
-    startCommand: gunicorn app:app --timeout 120 --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --timeout 600 --bind 0.0.0.0:$PORT --worker-class gthread --threads 2
