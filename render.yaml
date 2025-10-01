@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: musicgen-service
+    name: aiml-service
     env: python
     buildCommand: |
       mkdir -p /opt/render/.cache/huggingface
