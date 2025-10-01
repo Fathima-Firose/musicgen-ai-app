@@ -7,3 +7,5 @@ soundfile
 numpy
 gunicorn
 huggingface-hub
+sentencepiece
+protobuf
