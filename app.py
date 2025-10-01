@@ -1,29 +1,29 @@
 import os
-os.environ["TRANSFORMERS_CACHE"] = "/opt/render/.cache/huggingface"
-
 from flask import Flask, request, jsonify, send_from_directory
 import numpy as np
 import scipy.io.wavfile as wavfile
 import time
 
-app = Flask(__name__)
-
-# lazy-loaded pipeline
-pipe = None
-
-def get_pipe():
-    global pipe
-    if pipe is None:
-        # import here to avoid heavy import at module load
-        from transformers import pipeline
-        print("Loading MusicGen pipeline (this may take a while)...", flush=True)
-        pipe = pipeline("text-to-audio", "facebook/musicgen-small", device=-1)  # -1 -> CPU
-        print("Pipeline loaded.", flush=True)
-    return pipe
-
-# Ensure output dir exists
+# Set HuggingFace cache path
+os.environ["TRANSFORMERS_CACHE"] = "/opt/render/.cache/huggingface"
+os.makedirs(os.environ["TRANSFORMERS_CACHE"], exist_ok=True)
 os.makedirs("static/music", exist_ok=True)
 
+# Initialize Flask app
+app = Flask(__name__)
+
+# Load MusicGen pipeline at startup
+print("Loading MusicGen pipeline (this may take a while)...", flush=True)
+from transformers import pipeline
+
+try:
+    pipe = pipeline("text-to-audio", "facebook/musicgen-small", device=-1)  # CPU
+    print("Pipeline loaded successfully.", flush=True)
+except Exception as e:
+    print("Failed to load MusicGen pipeline:", e, flush=True)
+    pipe = None
+
+# Routes
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -34,32 +34,37 @@ def serve_music(filename):
 
 @app.route('/generate-music', methods=['POST'])
 def generate_music():
+    if pipe is None:
+        return jsonify({"error": "MusicGen pipeline not loaded"}), 500
+
     try:
         data = request.json or {}
-        prompt = data.get('prompt', '')
-        duration = int(min(int(data.get('duration', 15)), 45))  # cap duration to 45s
+        prompt = data.get('prompt', '').strip()
+        duration = int(min(int(data.get('duration', 15)), 15))  # max 15s for CPU
 
-        if not prompt.strip():
+        if not prompt:
             return jsonify({"error": "Empty prompt"}), 400
 
-        p = get_pipe()
+        # Music generation
         max_new_tokens = int(duration * 50)
-        music = p(prompt, forward_params={"max_new_tokens": max_new_tokens})
+        music = pipe(prompt, forward_params={"max_new_tokens": max_new_tokens})
 
         sampling_rate = music["sampling_rate"]
         audio_numpy = music["audio"][0].T
 
+        # Save as WAV
         output_filename = f"music_{abs(hash(prompt))}_{int(time.time())}.wav"
         output_path = os.path.join("static/music", output_filename)
-
         audio_int16 = np.int16(audio_numpy * 32767)
         wavfile.write(output_path, rate=sampling_rate, data=audio_int16)
 
         return jsonify({"url": f"/static/music/{output_filename}"})
+
     except Exception as e:
-        print("Error in generate-music:", e, flush=True)
+        print("Error generating music:", e, flush=True)
         return jsonify({"error": str(e)}), 500
 
+# Run app (for local testing)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
