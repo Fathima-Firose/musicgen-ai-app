@@ -1,15 +1,22 @@
 from flask import Flask, request, jsonify, send_from_directory
-from transformers import pipeline
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+from datasets import load_dataset
 import torch
-import scipy.io.wavfile
-import numpy as np
+import soundfile as sf
 import os
 
 app = Flask(__name__)
 
-# --- AI Model Setup ---
+# --- AI Model Setup (Smaller Model) ---
 device = "cpu"
-pipe = pipeline("text-to-audio", "facebook/musicgen-small", device=device)
+processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
+model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts").to(device)
+vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan").to(device)
+
+# Load speaker embeddings
+embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
+speaker_embeddings = torch.tensor(embeddings_dataset[7306]["xvector"]).unsqueeze(0)
+# --- End Model Setup ---
 
 # --- Ensure static/music directory exists ---
 if not os.path.exists('static/music'):
@@ -28,26 +35,22 @@ def generate_music():
     try:
         data = request.json
         prompt = data.get('prompt')
-        duration = data.get('duration', 15)
+        # Duration is not controllable with this model, it depends on the text length.
 
-        max_new_tokens = int(duration * 50)
-        music = pipe(prompt, forward_params={"max_new_tokens": max_new_tokens})
+        inputs = processor(text=prompt, return_tensors="pt").to(device)
         
-        sampling_rate = music["sampling_rate"]
-        audio_numpy = music["audio"][0].T
+        speech = model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=vocoder)
         
-        output_filename = f"music_{hash(prompt)}.wav"
+        output_filename = f"speech_{hash(prompt)}.wav"
         output_path = os.path.join('static/music', output_filename)
         
-        audio_int16 = np.int16(audio_numpy * 32767)
-        scipy.io.wavfile.write(output_path, rate=sampling_rate, data=audio_int16)
+        sf.write(output_path, speech.cpu().numpy(), samplerate=16000)
 
         file_url = f"/static/music/{output_filename}"
         return jsonify({'url': file_url})
     except Exception as e:
         print(f"An error occurred: {e}")
-        return jsonify({'error': 'Failed to generate music'}), 500
+        return jsonify({'error': 'Failed to generate speech'}), 500
 
 if __name__ == '__main__':
-    # Render uses port 10000 by default
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
