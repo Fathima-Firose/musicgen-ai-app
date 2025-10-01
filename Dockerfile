@@ -1,13 +1,14 @@
-FROM python:3.10
+FROM python:3.10-slim
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download MusicGen model
-RUN python -c "from transformers import pipeline; pipeline('text-to-audio','facebook/musicgen-small')"
+# pre-download model into cache
+RUN mkdir -p /opt/render/.cache/huggingface
+RUN TRANSFORMERS_CACHE=/opt/render/.cache/huggingface python -c "from transformers import pipeline; pipeline('text-to-audio','facebook/musicgen-small')"
 
 COPY . .
 
-CMD ["gunicorn", "app:app", "--timeout", "120", "--bind", "0.0.0.0:10000"]
+CMD ["gunicorn", "app:app", "--timeout", "120", "--bind", "0.0.0.0:$PORT"]
