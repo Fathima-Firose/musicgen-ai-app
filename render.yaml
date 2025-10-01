@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: musicgen-service
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      python -c "from transformers import pipeline; pipeline('text-to-audio','facebook/musicgen-small')"
+    startCommand: gunicorn app:app --timeout 120
