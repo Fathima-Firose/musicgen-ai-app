@@ -3,5 +3,7 @@ transformers
 torch
 scipy
 accelerate
-datasets
 soundfile
+numpy
+gunicorn
+huggingface-hub
