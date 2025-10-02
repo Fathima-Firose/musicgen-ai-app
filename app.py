@@ -1,23 +1,24 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
-import os, time
+from flask import Flask, render_template_string, request, send_file
+import time
+import os
 
 app = Flask(__name__)
 
-# Serve homepage
+# Load index.html directly (since it's in root folder, not templates/)
 @app.route('/')
 def index():
-    return render_template('index.html')
+    with open("index.html", "r") as f:
+        html_content = f.read()
+    return render_template_string(html_content)
 
-# Generate music (simulate AI delay + keyword-based choice)
 @app.route('/generate-music', methods=['POST'])
 def generate_music():
-    data = request.get_json()
-    prompt = data.get('prompt', '').lower()
+    prompt = request.form.get("prompt", "").lower()
 
-    # Fake processing delay (simulate AI generating music)
+    # Add artificial loading delay (8–10 secs)
     time.sleep(8)
 
-    # Choose file based on keyword
+    # Decide which file to play
     if "happy" in prompt:
         filename = "musicgen-1.wav"
     elif "sad" in prompt:
@@ -27,13 +28,17 @@ def generate_music():
     else:
         filename = "musicgen-1.wav"  # default
 
-    file_url = f"/static/music/{filename}"
-    return jsonify({"url": file_url})
+    if os.path.exists(filename):
+        return {"file": f"/get-music/{filename}"}
+    else:
+        return {"error": f"{filename} not found!"}, 404
 
-# Route to serve music files
-@app.route('/static/music/<path:filename>')
-def serve_music(filename):
-    return send_from_directory(os.path.join(app.root_path, 'static/music'), filename)
+@app.route('/get-music/<filename>')
+def get_music(filename):
+    if os.path.exists(filename):
+        return send_file(filename, mimetype="audio/wav", as_attachment=False)
+    else:
+        return "File not found", 404
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=10000)
