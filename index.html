@@ -261,43 +261,44 @@
             color: var(--text-light);
         }
         
-        /* Download Button */
         .download-btn {
-            background: transparent;
-            color: var(--primary-purple);
-            border: 2px solid var(--primary-purple);
-            border-radius: 8px;
-            padding: 0.7rem 1.5rem;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 500;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-            display: none; /* Hidden by default */
-        }
-        
-        .download-btn:hover {
-            color: white;
-            background-color: var(--primary-purple);
-            box-shadow: 0 0 20px var(--glow-color);
-        }
+    display: none; /* initially hidden */
+    text-decoration: none;
+    text-align: center;
+    background: transparent;
+    color: var(--primary-purple);
+    border: 2px solid var(--primary-purple);
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
 
-        .download-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.5s ease;
-        }
+.download-btn:hover {
+    color: white;
+    background-color: var(--primary-purple);
+    box-shadow: 0 0 20px var(--glow-color);
+}
 
-        .download-btn:hover::before {
-            left: 100%;
-        }
-        
+.download-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.download-btn:hover::before {
+    left: 100%;
+}
+
         /* Footer */
         footer {
             margin-top: 3rem;
@@ -375,7 +376,8 @@
                      <audio controls id="audioPlayer" src=""></audio>
                 </div>
                 
-                <button class="download-btn" id="downloadBtn">Download Music</button>
+                <a class="download-btn" id="downloadBtn">Download Music</a>
+
             </section>
         </main>
         
@@ -458,6 +460,7 @@ generateBtn.addEventListener('click', async () => {
 </body>
 
 </html>
+
 
 
 
