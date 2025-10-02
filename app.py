@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# Load index.html directly from root (no templates folder needed)
+# Root route: load index.html from root folder
 @app.route('/')
 def index():
     try:
@@ -19,10 +19,10 @@ def index():
 def generate_music():
     prompt = request.form.get("prompt", "").lower()
 
-    # Artificial loading delay (8–10 seconds)
+    # Artificial delay 8 seconds
     time.sleep(8)
 
-    # Determine which music file to serve
+    # Select music file
     if "happy" in prompt:
         filename = "musicgen-1.wav"
     elif "sad" in prompt:
@@ -34,12 +34,11 @@ def generate_music():
 
     music_path = os.path.join("static", "music", filename)
     if os.path.exists(music_path):
-        # Return URL path for frontend to play/download
         return jsonify({"file": f"/get-music/{filename}"})
     else:
         return jsonify({"error": f"{filename} not found!"}), 404
 
-# Serve music files from static/music folder
+# Serve music files from static/music
 @app.route('/get-music/<filename>')
 def get_music(filename):
     music_dir = os.path.join(app.root_path, "static", "music")
