@@ -449,46 +449,6 @@
     });
 </script>
 
-            try {
-                // 2. Send the request to the back-end
-                const response = await fetch('/generate-music', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: promptText,
-                        duration: duration
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to generate music. Server returned ' + response.status);
-                }
-
-                const data = await response.json();
-                
-                // 3. Update the audio player with the new file
-                audioPlayer.src = data.url;
-                downloadBtn.href = data.url;
-                downloadBtn.setAttribute('download', 'musicgen-1.wav');
-
-
-                // 4. Show the results
-                audioPlayerWrapper.style.display = 'block';
-                downloadBtn.style.display = 'block';
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please check the console for details.');
-            } finally {
-                // 5. Reset the UI
-                loading.style.display = 'none';
-                generateBtn.disabled = false;
-                generateBtn.textContent = 'Generate';
-            }
-        });
-    </script>
 
 </body>
 
