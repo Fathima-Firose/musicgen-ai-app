@@ -384,31 +384,70 @@
         </footer>
         
     </div>
-
 <script>
-        const generateBtn = document.getElementById('generateBtn');
-        const loading = document.getElementById('loading');
-        const audioPlayerWrapper = document.getElementById('audioPlayerWrapper');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const promptInput = document.getElementById('prompt');
-        const durationInput = document.getElementById('duration');
+    const generateBtn = document.getElementById('generateBtn');
+    const loading = document.getElementById('loading');
+    const audioPlayerWrapper = document.getElementById('audioPlayerWrapper');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const promptInput = document.getElementById('prompt');
+    const durationInput = document.getElementById('duration');
 
-        generateBtn.addEventListener('click', async () => {
-            const promptText = promptInput.value;
-            const duration = parseInt(durationInput.value, 10);
+    generateBtn.addEventListener('click', async () => {
+        const promptText = promptInput.value;
+        const duration = parseInt(durationInput.value, 10);
 
-            if (!promptText.trim()) {
-                alert('Please enter a music description!');
-                return;
+        if (!promptText.trim()) {
+            alert('Please enter a music description!');
+            return;
+        }
+
+        // Show loading state
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating...';
+        audioPlayerWrapper.style.display = 'none';
+        downloadBtn.style.display = 'none';
+        loading.style.display = 'flex';
+
+        try {
+            // Send POST request to backend
+            const response = await fetch('/generate-music', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `prompt=${encodeURIComponent(promptText)}&duration=${duration}`
+            });
+
+            const data = await response.json();
+
+            if (data.file) {
+                // Set audio source
+                audioPlayer.src = data.file;
+                audioPlayer.load();
+                audioPlayer.play();
+
+                // Set download link
+                downloadBtn.href = data.file;
+                downloadBtn.setAttribute('download', data.file.split('/').pop());
+
+                // Show audio player and download button
+                audioPlayerWrapper.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+            } else if (data.error) {
+                alert('Error: ' + data.error);
             }
 
-            // 1. Update UI to show loading state
-            generateBtn.disabled = true;
-            generateBtn.textContent = 'Generating...';
-            audioPlayerWrapper.style.display = 'none';
-            downloadBtn.style.display = 'none';
-            loading.style.display = 'flex';
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred. Check the console for details.');
+        } finally {
+            loading.style.display = 'none';
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate';
+        }
+    });
+</script>
 
             try {
                 // 2. Send the request to the back-end
@@ -454,4 +493,5 @@
 </body>
 
 </html>
+
 
