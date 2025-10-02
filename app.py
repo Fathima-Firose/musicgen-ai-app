@@ -26,21 +26,19 @@ def generate_music():
     else:
         filename = "musicgen-1.wav"  # default
 
-    music_dir = os.path.join(app.root_path, "static")
+    music_dir = os.path.join(app.root_path, "static", "music")
     file_path = os.path.join(music_dir, filename)
 
     if os.path.exists(file_path):
-        return jsonify({"file": f"/static/{filename}"})
+        return jsonify({"file": f"/static/music/{filename}"})
     else:
         return jsonify({"error": f"{filename} not found!"}), 404
 
 # Serve files from static/music/
-@app.route('/static/<filename>')
+@app.route('/static/music/<filename>')
 def get_music(filename):
-    music_dir = os.path.join(app.root_path, "static")
+    music_dir = os.path.join(app.root_path, "static", "music")
     return send_from_directory(music_dir, filename, mimetype="audio/wav")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
-
-
