@@ -1,32 +1,39 @@
-import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory
+import os, time
 
 app = Flask(__name__)
 
-# Route for home page
+# Serve homepage
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return render_template('index.html')
 
-# Serve music files (from root folder)
-@app.route('/static/music/<path:filename>')
-def serve_music(filename):
-    # File is in the root folder, ignore 'music/' subpath
-    file_path = filename.replace("music/", "")
-    return send_from_directory('.', file_path)
-
-# Demo "generate music" endpoint
+# Generate music (simulate AI delay + keyword-based choice)
 @app.route('/generate-music', methods=['POST'])
 def generate_music():
-    try:
-        # Always return the same demo file
-        demo_file = "musicgen-1.wav"
-        return jsonify({"url": f"/static/music/{demo_file}"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    data = request.get_json()
+    prompt = data.get('prompt', '').lower()
 
-# Run locally
+    # Fake processing delay (simulate AI generating music)
+    time.sleep(8)
+
+    # Choose file based on keyword
+    if "happy" in prompt:
+        filename = "musicgen-1.wav"
+    elif "sad" in prompt:
+        filename = "musicgen-2.wav"
+    elif "pop" in prompt:
+        filename = "musicgen-3.wav"
+    else:
+        filename = "musicgen-1.wav"  # default
+
+    file_url = f"/static/music/{filename}"
+    return jsonify({"url": file_url})
+
+# Route to serve music files
+@app.route('/static/music/<path:filename>')
+def serve_music(filename):
+    return send_from_directory(os.path.join(app.root_path, 'static/music'), filename)
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
-
+    app.run(host="0.0.0.0", port=5000)
