@@ -20,7 +20,7 @@ def serve_music(filename):
 def generate_music():
     try:
         # Always return the same demo file
-        demo_file = "musicgen.wav"
+        demo_file = "musicgen-1.wav"
         return jsonify({"url": f"/static/music/{demo_file}"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -29,3 +29,4 @@ def generate_music():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
