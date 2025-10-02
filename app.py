@@ -35,11 +35,12 @@ def generate_music():
         return jsonify({"error": f"{filename} not found!"}), 404
 
 # Serve files from static/music/
-@app.route('/static/music/<filename>')
+@app.route('/static/<filename>')
 def get_music(filename):
-    music_dir = os.path.join(app.root_path, "static", "music")
+    music_dir = os.path.join(app.root_path, "static")
     return send_from_directory(music_dir, filename, mimetype="audio/wav")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
+
 
